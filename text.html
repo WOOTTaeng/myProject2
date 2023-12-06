@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flappy Bird</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: skyblue; /* 하늘색으로 변경 */
+    }
+
+    canvas {
+      display: block;
+      margin: 20px auto;
+      border: 1px solid #000;
+    }
+
+    #gameOverScreen {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+<div id="gameOverScreen">
+  <p>Game Over</p>
+  <button onclick="restartGame()">Continue</button>
+</div>
+
+<script>
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+  const gameOverScreen = document.getElementById("gameOverScreen");
+
+  let birdY = canvas.height / 2;
+  let velocity = 0;
+  const gravity = 0.5;
+  const jumpStrength = -10;
+  const pipeWidth = 50;
+  const pipeGap = 200; // Increased gap between pipes
+  const pipeSpacing = 300; // Spacing between pipes
+  let pipes = [];
+  let score = 0;
+
+  function drawBird() {
+    ctx.fillStyle = "#FF5733";
+    ctx.fillRect(50, birdY, 30, 30);
+  }
+
+  function drawPipe(pipeX, openingY) {
+    ctx.fillStyle = "#008000";
+    ctx.fillRect(pipeX, 0, pipeWidth, openingY);
+    ctx.fillRect(pipeX, openingY + pipeGap, pipeWidth, canvas.height - (openingY + pipeGap));
+  }
+
+  function drawGround() {
+    ctx.fillStyle = "#A52A2A";
+    ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+  }
+
+  function draw() {
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw pipes
+    for (let i = 0; i < pipes.length; i++) {
+      drawPipe(pipes[i].x, pipes[i].openingY);
+    }
+
+    // Draw bird
+    drawBird();
+
+    // Draw ground
+    drawGround();
+
+    // Display score
+    ctx.fillStyle = "#000";
+    ctx.font = "20px Arial";
+    ctx.fillText("Score: " + score, 10, 30);
+
+    // Update bird position
+    velocity += gravity;
+    birdY += velocity;
+
+    // Check for collision with pipes or ground
+    if (birdY > canvas.height - 20) {
+      // Collision with ground
+      gameOver();
+      return;
+    }
+
+    for (let i = 0; i < pipes.length; i++) {
+      // Check if bird is within the horizontal bounds of the pipe
+      if (50 < pipes[i].x + pipeWidth && 80 > pipes[i].x) {
+        // Check if bird is outside the vertical bounds of the opening
+        if (birdY < pipes[i].openingY || birdY + 30 > pipes[i].openingY + pipeGap) {
+          // Collision with pipes
+          gameOver();
+          return;
+        }
+      }
+
+      // Increase score if bird passes through the pipe
+      if (pipes[i].x === 50) {
+        score++;
+      }
+    }
+
+    // Move pipes to the left
+    for (let i = 0; i < pipes.length; i++) {
+      pipes[i].x -= 5;
+    }
+
+    // Remove pipes that are out of the canvas
+    pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0);
+
+    // Generate new pipes with spacing
+    if (Math.random() < 0.02) {
+      const openingY = Math.floor(Math.random() * (canvas.height - pipeGap));
+      pipes.push({ x: canvas.width + pipes.length * pipeSpacing, openingY });
+    }
+
+    // Request the next animation frame
+    requestAnimationFrame(draw);
+  }
+
+  function gameOver() {
+    gameOverScreen.style.display = "block";
+  }
+
+  function restartGame() {
+    gameOverScreen.style.display = "none";
+    birdY = canvas.height / 2;
+    velocity = 0;
+    pipes = [];
+    score = 0;
+    draw();
+  }
+
+  document.addEventListener("keydown", function (event) {
+    if (event.code === "Space") {
+      velocity = jumpStrength;
+    }
+  });
+
+  draw();
+</script>
+
+</body>
+</html>
